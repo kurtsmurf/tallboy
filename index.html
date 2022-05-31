@@ -3,8 +3,8 @@
 </head>
 
 <body>
-  <svg id="tallboy" viewBox="-0.5 -0.5 1 11">
-    <path d="M 0 10 V 0"/>
+  <svg id="tallboy" viewBox="-0.5 0 1 10">
+    <path/>
   </svg>
 </body>
 
@@ -18,9 +18,8 @@
 
   svg {
     height: min(90vh, 20rem);
+    border: 4px solid black;
   }
-
-/* ------------------------ */
 
   path {
     stroke: black;
@@ -29,35 +28,40 @@
 </style>
 
 <script>
+  // ================
   const audioContext = new AudioContext();
   const analyser = audioContext.createAnalyser();
 
+  // ================
   const getSamples = () => {
-    const samples = new Float32Array(128);
+    const samples = new Float32Array(1);
     analyser.getFloatTimeDomainData(samples);
     return samples;
   };
+  const sum = (a, b) => a + b;
+  const rms = (samples) =>
+    [...samples]
+      .map(Math.abs)
+      .reduce(sum, 0) / samples.length;
 
+  // ================
   const animate = () => {
     const samples = getSamples();
-
-    const num = rms(samples) * 30;
-
-    document.querySelector('#tallboy > path').setAttribute('d', `M 0 10 V ${10 - num}`)
-
-    requestAnimationFrame(animate)
-
+    const num = rms(samples);
+    document
+      .querySelector('#tallboy > path')
+      .setAttribute('d', `M 0 10 V ${10 - num}`)
+    requestAnimationFrame(animate);
   }
 
-  const rms = (samples) =>
-  [...samples]
-    .map(Math.abs)
-    .reduce((a, b) => a + b, 0) / samples.length;
+  // ================
+  animate();
 
-  navigator.mediaDevices
-    .getUserMedia({ audio: true, video: false })
-    .then((stream) => audioContext.createMediaStreamSource(stream))
-    .then((streamSource) => streamSource.connect(analyser))
-    .then(animate);
-
+  // ================
+  const oscillator = audioContext.createOscillator();
+  oscillator.frequency.value = 0.2;
+  oscillator.start();
+  const gain = audioContext.createGain();
+  gain.gain.value = 10;
+  oscillator.connect(gain).connect(analyser);
 </script>
